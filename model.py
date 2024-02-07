@@ -208,11 +208,11 @@ def LoadData(train_path, test_path, val_path):
 	}
 
 if __name__ == "__main__":
-  # reading datas
+  	# reading data
 	gaussian_data = LoadData('HW#1/two_gaussians_train.csv', 'HW#1/two_gaussians_test.csv', 'HW#1/two_gaussians_valid.csv')
 	# getting appropriate splits
-  x_train, y_train, x_val, y_val = gaussian_data['x_train'],gaussian_data['y_train'], gaussian_data['x_val'], gaussian_data['y_val']
+  	x_train, y_train, x_val, y_val = gaussian_data['x_train'],gaussian_data['y_train'], gaussian_data['x_val'], gaussian_data['y_val']
 	# converting data types
-  y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size,1)
+  	y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size,1)
 	# running neural network model
-  run = NeuralNetworkModel(x_train, y_train, x_val, y_val, K = 32, iterations = 50, alpha = 0.01)
+  	run = NeuralNetworkModel(x_train, y_train, x_val, y_val, K = 32, iterations = 50, alpha = 0.01)
