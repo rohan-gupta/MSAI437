@@ -80,7 +80,7 @@ def ComputeAccuracy(predictions, labels):
     return accuracy
 
 def ComputeCost(preds, Y):
-	m = Y.shape[1]
+	m = Y.shape[0]
 	epsilon = 1e-15
 	preds = np.clip(preds, epsilon, 1-epsilon)
 
