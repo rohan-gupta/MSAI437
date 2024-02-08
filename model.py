@@ -11,15 +11,15 @@ def InitializeParameters(X, K):
 	Output ->
 		1) dictionary of parameters
 	'''
-	input_layer_nodes = X.shape[0]
+	input_layer_nodes = X.shape[1]
 	hidden_layer_nodes = K
 	output_layer_nodes = 1
 	# hidden layer
 	w1 = np.random.randn(hidden_layer_nodes, input_layer_nodes) * 0.01
-	b1 = np.zeros(shape = (hidden_layer_nodes, 1))
+	b1 = np.zeros(shape = (1, hidden_layer_nodes))
 	# output layer
 	w2 = np.random.randn(output_layer_nodes, hidden_layer_nodes) * 0.01
-	b2 = np.zeros(shape = (output_layer_nodes, 1))
+	b2 = np.zeros(shape = (1, output_layer_nodes))
 
 	return {
 	    'w1':w1,
@@ -49,13 +49,13 @@ def ForwardPropogation(X, parameters):
 
 	# Hidden Layer
 	# Activation -> Relu
-	z1 = np.dot(w1, X) + b1
+	z1 = np.dot(X, w1.T) + b1 
 	a1 = ApplyRelu(z1)
 
 	# Output Layer
 	# Activation -> Sigmoid
 	# to do // check activation -> throwing error here
-	z2 = np.dot(w2, a1) + b2
+	z2 = np.dot(a1, w2.T) + b2
 	a2 = ApplySigmoid(z2)
 
 	return {
@@ -64,6 +64,19 @@ def ForwardPropogation(X, parameters):
 	    'z2':z2,
 	    'a2':a2
 	}
+
+def ComputeAccuracy(predictions, labels):
+    '''
+    Compute the accuracy of predictions.
+    Inputs:
+        - predictions: numpy array of model predictions
+        - labels: numpy array of actual labels
+    Output:
+        - accuracy: float, the percentage of correct predictions
+    '''
+    preds_class = predictions > 0.5
+    accuracy = np.mean(preds_class == labels)
+    return accuracy
 
 def ComputeCost(preds, Y):
 	m = Y.shape[1]
@@ -84,7 +97,9 @@ def BackwardPropogation(parameters, forward_pass, X, Y):
 	Output ->
 		1) dictionary of gradients of weights
 	'''
-	m = Y.size
+
+
+	m = Y.shape[0]
 
 	w1, b1 = parameters['w1'], parameters['b1']
 	w2, b2 = parameters['w2'], parameters['b2']
@@ -93,21 +108,21 @@ def BackwardPropogation(parameters, forward_pass, X, Y):
 
 	# Output Layer
 	dz2 = a2 - Y
-	dw2 = np.dot(dz2, a1.T)/m
-	db2 = np.sum(dz2, axis = 1, keepdims = True)/m
+	dw2 = np.dot(dz2.T, a1) / m
+	db2 = np.sum(dz2, axis=0, keepdims=True) / m
 
 	# Hidden Layer
-	da1 = np.dot(w2.T, dz2)
-	dz1 = da1 * (np.int64(a1>0))
-	dw1 = np.dot(dz1, X.T)/m
-	db1 = np.sum(dz1, axis = 1, keepdims = True)/m
+	da1 = np.dot(dz2, w2)
+	dz1 = da1 * (a1 > 0)
+	dw1 = np.dot(dz1.T, X) / m
+	db1 = np.sum(dz1, axis=0, keepdims=True) / m
 
 	return {
-	      'dw1':dw1,
-	      'db1':db1,
-	      'dw2':dw2,
-	      'db2':db2
-	  }
+		'dw1': dw1,
+		'db1': db1,
+		'dw2': dw2,
+		'db2': db2
+	}
 
 def UpdateParameters(parameters, correction, alpha):
 	'''
@@ -119,7 +134,7 @@ def UpdateParameters(parameters, correction, alpha):
 	Outputs ->
 		1) parameters: replaces old weights with new weights
 	'''
-	w1, b1 = parameters['w1'], parameters['b2']
+	w1, b1 = parameters['w1'], parameters['b1']
 	w2, b2 = parameters['w2'], parameters['b2']
 
 	dw1, db1 = correction['dw1'], correction['db1']
@@ -136,7 +151,6 @@ def UpdateParameters(parameters, correction, alpha):
 	parameters['w2'], parameters['b2'] = w2_new, b2_new
 
 	return parameters
-
 
 def NeuralNetworkModel(X_train, Y_train, X_val, Y_val, K, iterations, alpha):
 	'''
@@ -156,25 +170,31 @@ def NeuralNetworkModel(X_train, Y_train, X_val, Y_val, K, iterations, alpha):
 	'''
 	train_loss_vals = []
 	val_loss_vals = []
+	train_acc_vals, val_acc_vals = [], []  # Lists to store accuracy values
+
 	parameters = InitializeParameters(X_train, K)
 
 	for _ in range(iterations):
 		print("Epoch: ",_)
-
+		#Training
 		forward_pass_train = ForwardPropogation(X_train, parameters)
 		train_loss = ComputeCost(forward_pass_train['a2'], Y_train)
+		train_acc = ComputeAccuracy(forward_pass_train['a2'], Y_train)  # Compute training accuracy
+		train_acc_vals.append(train_acc)  
 		train_loss_vals.append(train_loss)
 
-		print(forward_pass_train['a2'])
-		print(Y_train)
-		
+		# print(forward_pass_train['a2'])
+		# print(Y_train)
+		#Validation
 		forward_pass_val = ForwardPropogation(X_val, parameters)
 		val_loss = ComputeCost(forward_pass_val['a2'], Y_val)
+		val_acc = ComputeAccuracy(forward_pass_val['a2'], Y_val) 
 		val_loss_vals.append(val_loss)
+		val_acc_vals.append(val_acc)  
 
 		correction = BackwardPropogation(parameters, forward_pass_train, X_train, Y_train)
 		parameters = UpdateParameters(parameters, correction, alpha)
-		print(f"Training Loss: {train_loss}\tValidation Loss: {val_loss}\n\n")
+		print(f"Epoch {_}: Training Loss: {train_loss}, Training Accuracy: {train_acc}, Validation Loss: {val_loss}, Validation Accuracy: {val_acc}")
 
 	return parameters, train_loss_vals, val_loss_vals
 
@@ -208,11 +228,11 @@ def LoadData(train_path, test_path, val_path):
 	}
 
 if __name__ == "__main__":
-  	# reading data
-	gaussian_data = LoadData('HW#1/two_gaussians_train.csv', 'HW#1/two_gaussians_test.csv', 'HW#1/two_gaussians_valid.csv')
+	# reading data
+	gaussian_data = LoadData('HW1/data/two_gaussians_train.csv', 'HW1/data/two_gaussians_test.csv', 'HW1/data/two_gaussians_valid.csv')
 	# getting appropriate splits
-  	x_train, y_train, x_val, y_val = gaussian_data['x_train'],gaussian_data['y_train'], gaussian_data['x_val'], gaussian_data['y_val']
+	x_train, y_train, x_val, y_val = gaussian_data['x_train'],gaussian_data['y_train'], gaussian_data['x_val'], gaussian_data['y_val']
 	# converting data types
-  	y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size,1)
+	y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size,1)
 	# running neural network model
-  	run = NeuralNetworkModel(x_train, y_train, x_val, y_val, K = 32, iterations = 50, alpha = 0.01)
+	run = NeuralNetworkModel(x_train, y_train, x_val, y_val, K = 32, iterations = 500, alpha = 0.01)
