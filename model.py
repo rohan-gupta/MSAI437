@@ -228,15 +228,82 @@ def LoadData(train_path, test_path, val_path):
 		'y_test':y_test
 	}
 
+def experiment_with_parameters(x_train, y_train, x_val, y_val, hidden_layer_sizes, learning_rates, iteration_counts):
+    """
+    Experiment with various hyperparameters to find the best configuration.
+    """
+    results = []
+
+    for K in hidden_layer_sizes:
+        for alpha in learning_rates:
+            for iterations in iteration_counts:
+                # Initialize parameters and train the model
+                parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals = NeuralNetworkModel(
+                    x_train, y_train, x_val, y_val, K=K, iterations=iterations, alpha=alpha
+                )
+                
+                # Evaluate the model on the validation set
+                final_val_acc = val_acc_vals[-1]  # Last accuracy value as the final accuracy
+                final_val_loss = val_loss_vals[-1]  # Last loss value as the final loss
+
+                # Store the results
+                results.append({
+                    'hidden_layer_size': K,
+                    'learning_rate': alpha,
+                    'iterations': iterations,
+                    'final_val_acc': final_val_acc,
+                    'final_val_loss': final_val_loss
+                })
+
+    # Sort results by validation accuracy, highest first
+    results_sorted = sorted(results, key=lambda x: x['final_val_acc'], reverse=True)
+    return results_sorted
+
+
+def plot_decision_boundary(X, y, model, parameters):
+    # Set min and max values and give it some padding
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    h = 0.01
+    # Generate a grid of points with distance h between them
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    # Predict the function value for the whole grid
+    Z = model(np.c_[xx.ravel(), yy.ravel()], parameters)
+    Z = Z['a2']
+    Z = Z > 0.5
+    Z = Z.reshape(xx.shape)
+    # Plot the contour and training examples
+    plt.contourf(xx, yy, Z, alpha=0.5)
+    plt.scatter(X[:, 0], X[:, 1], c=y.ravel(), cmap=plt.cm.Spectral)
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.title('Decision Boundary')
+
+
 if __name__ == "__main__":
 	# reading data
-	gaussian_data = LoadData('HW1/data/two_gaussians_train.csv', 'HW1/data/two_gaussians_test.csv', 'HW1/data/two_gaussians_valid.csv')
+	# data = LoadData('HW1/data/center_surround_train.csv', 'HW1/data/center_surround_test.csv', 'HW1/data/center_surround_valid.csv')
+	# data = LoadData('HW1/data/spiral_train.csv', 'HW1/data/spiral_test.csv', 'HW1/data/spiral_valid.csv')
+	data = LoadData('HW1/data/two_gaussians_train.csv', 'HW1/data/two_gaussians_test.csv', 'HW1/data/two_gaussians_valid.csv')
+	# data = LoadData('HW1/data/xor_train.csv', 'HW1/data/xor_test.csv', 'HW1/data/xor_valid.csv')
 	# getting appropriate splits
-	x_train, y_train, x_val, y_val = gaussian_data['x_train'],gaussian_data['y_train'], gaussian_data['x_val'], gaussian_data['y_val']
+	x_train, y_train, x_val, y_val = data['x_train'],data['y_train'], data['x_val'], data['y_val']
 	# converting data types
 	y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size,1)
-	# running neural network model
-	parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals = NeuralNetworkModel(x_train, y_train, x_val, y_val, K=32, iterations=50, alpha=0.01)
+	# Find best Param
+	hidden_layer_sizes = [4, 8, 16, 32, 64]
+	learning_rates = [0.1, 0.01, 0.001, 0.0001]
+	iteration_counts = [100, 500, 1000]
+	best_param = experiment_with_parameters(x_train, y_train, x_val, y_val, hidden_layer_sizes, learning_rates, iteration_counts)[0]
+
+	# Run model on best param 
+	parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals = NeuralNetworkModel(x_train, y_train, x_val, y_val, K=best_param["hidden_layer_size"], iterations=best_param["iterations"], alpha=best_param["learning_rate"])
+
+	x_test = data["x_test"]
+	y_test = data["y_test"]
+	plot_decision_boundary(x_test, y_test, ForwardPropogation, parameters)
+	plt.show()
+
 	# Plotting the training and validation loss
 	plt.figure(figsize=(10, 5))
 	plt.subplot(1, 2, 1)
@@ -257,5 +324,6 @@ if __name__ == "__main__":
 	plt.legend()
 
 	plt.tight_layout()
+	print(best_param)
 	plt.show(block=True)
 
