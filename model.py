@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def InitializeParameters(X, K):
@@ -196,7 +197,7 @@ def NeuralNetworkModel(X_train, Y_train, X_val, Y_val, K, iterations, alpha):
 		parameters = UpdateParameters(parameters, correction, alpha)
 		print(f"Epoch {_}: Training Loss: {train_loss}, Training Accuracy: {train_acc}, Validation Loss: {val_loss}, Validation Accuracy: {val_acc}")
 
-	return parameters, train_loss_vals, val_loss_vals
+	return parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals
 
 
 
@@ -235,4 +236,26 @@ if __name__ == "__main__":
 	# converting data types
 	y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size,1)
 	# running neural network model
-	run = NeuralNetworkModel(x_train, y_train, x_val, y_val, K = 32, iterations = 500, alpha = 0.01)
+	parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals = NeuralNetworkModel(x_train, y_train, x_val, y_val, K=32, iterations=50, alpha=0.01)
+	# Plotting the training and validation loss
+	plt.figure(figsize=(10, 5))
+	plt.subplot(1, 2, 1)
+	plt.plot(train_loss_vals, label='Training Loss')
+	plt.plot(val_loss_vals, label='Validation Loss')
+	plt.title('Loss over iterations')
+	plt.xlabel('Iterations')
+	plt.ylabel('Loss')
+	plt.legend()
+
+	# Plotting the training and validation accuracy
+	plt.subplot(1, 2, 2)
+	plt.plot(train_acc_vals, label='Training Accuracy')
+	plt.plot(val_acc_vals, label='Validation Accuracy')
+	plt.title('Accuracy over iterations')
+	plt.xlabel('Iterations')
+	plt.ylabel('Accuracy')
+	plt.legend()
+
+	plt.tight_layout()
+	plt.show(block=True)
+
