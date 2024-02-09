@@ -39,7 +39,7 @@ class NeuralNet:
 		params = self.initialize_parameters(X_train, K)
 
 		for _ in range(iterations):
-			print("Epoch: ", _)
+			# print("Epoch: ", _)
 			# Training
 			forward_pass_train = self.forward_prop(X_train, params)
 			train_loss = Utils.compute_cost(forward_pass_train["a2"], Y_train, cost_function)
@@ -58,8 +58,8 @@ class NeuralNet:
 
 			correction = self.backward_prop(params, forward_pass_train, X_train, Y_train)
 			params = self.update_params(params, correction, alpha)
-			print(
-				f"Epoch {_}: Training Loss: {train_loss}, Training Accuracy: {train_acc}, Validation Loss: {val_loss}, Validation Accuracy: {val_acc}")
+		# print(
+		# 	f"Epoch {_}: Training Loss: {train_loss}, Training Accuracy: {train_acc}, Validation Loss: {val_loss}, Validation Accuracy: {val_acc}")
 
 		return params, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals
 
@@ -308,71 +308,74 @@ class Utils:
 
 
 if __name__ == "__main__":
-	# reading data
-	data = Utils.load_data(
-		"./data/spiral_train.csv",
-		"./data/spiral_test.csv",
-		"./data/spiral_valid.csv"
-	)
+	file_names = ["center_surround", "spiral", "two_gaussians", "xor"]
 
-	# getting appropriate splits
-	x_train, y_train, x_val, y_val = data["x_train"], data["y_train"], data["x_val"], data["y_val"]
+	for f in file_names:
+		# reading data
+		data = Utils.load_data(
+			f"./data/{f}_train.csv",
+			f"./data/{f}_test.csv",
+			f"./data/{f}_valid.csv"
+		)
 
-	# converting data types
-	y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size, 1)
+		# getting appropriate splits
+		x_train, y_train, x_val, y_val = data["x_train"], data["y_train"], data["x_val"], data["y_val"]
 
-	# Find best Param
-	hidden_layer_sizes = [4, 8, 16, 32, 64]
-	learning_rates = [0.1, 0.01, 0.001, 0.0001]
-	iteration_counts = [100, 500, 1000]
-	cost_function = "mean_squared_error"
-	best_param = Utils.experiment_with_parameters(
-		x_train,
-		y_train,
-		x_val,
-		y_val,
-		hidden_layer_sizes,
-		learning_rates,
-		iteration_counts,
-		cost_function
-	)[0]
+		# converting data types
+		y_train, y_val = np.asarray(y_train).reshape(y_train.size, 1), np.asarray(y_val).reshape(y_val.size, 1)
 
-	# Run model on best param
-	model = NeuralNet()
-	parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals = model.train(
-		x_train,
-		y_train,
-		x_val,
-		y_val,
-		K=best_param["hidden_layer_size"],
-		iterations=best_param["iterations"],
-		alpha=best_param["learning_rate"],
-		cost_function=cost_function,
-	)
-	x_test = data["x_test"]
-	y_test = data["y_test"]
-	Utils.plot_decision_boundary(x_test, y_test, model, parameters)
-	plt.show()
+		# Find best Param
+		hidden_layer_sizes = [4, 8, 16, 32, 64]
+		learning_rates = [0.1, 0.01, 0.001, 0.0001]
+		iteration_counts = [100, 500, 1000]
+		cost_function = "binary_cross_entropy"
+		best_param = Utils.experiment_with_parameters(
+			x_train,
+			y_train,
+			x_val,
+			y_val,
+			hidden_layer_sizes,
+			learning_rates,
+			iteration_counts,
+			cost_function
+		)[0]
 
-	# Plotting the training and validation loss
-	plt.figure(figsize=(10, 5))
-	plt.subplot(1, 2, 1)
-	plt.plot(train_loss_vals, label="Training Loss")
-	plt.plot(val_loss_vals, label="Validation Loss")
-	plt.title("Loss over iterations")
-	plt.xlabel("Iterations")
-	plt.ylabel("Loss")
-	plt.legend()
+		# Run model on best param
+		model = NeuralNet()
+		parameters, train_loss_vals, val_loss_vals, train_acc_vals, val_acc_vals = model.train(
+			x_train,
+			y_train,
+			x_val,
+			y_val,
+			K=best_param["hidden_layer_size"],
+			iterations=best_param["iterations"],
+			alpha=best_param["learning_rate"],
+			cost_function=cost_function,
+		)
+		x_test = data["x_test"]
+		y_test = data["y_test"]
+		Utils.plot_decision_boundary(x_test, y_test, model, parameters)
+		plt.show()
 
-	# Plotting the training and validation accuracy
-	plt.subplot(1, 2, 2)
-	plt.plot(train_acc_vals, label="Training Accuracy")
-	plt.plot(val_acc_vals, label="Validation Accuracy")
-	plt.title("Accuracy over iterations")
-	plt.xlabel("Iterations")
-	plt.ylabel("Accuracy")
-	plt.legend()
+		# Plotting the training and validation loss
+		plt.figure(figsize=(10, 5))
+		plt.subplot(1, 2, 1)
+		plt.plot(train_loss_vals, label="Training Loss")
+		plt.plot(val_loss_vals, label="Validation Loss")
+		plt.title("Loss over iterations")
+		plt.xlabel("Iterations")
+		plt.ylabel("Loss")
+		plt.legend()
 
-	plt.tight_layout()
-	print(best_param)
-	plt.show(block=True)
+		# Plotting the training and validation accuracy
+		plt.subplot(1, 2, 2)
+		plt.plot(train_acc_vals, label="Training Accuracy")
+		plt.plot(val_acc_vals, label="Validation Accuracy")
+		plt.title("Accuracy over iterations")
+		plt.xlabel("Iterations")
+		plt.ylabel("Accuracy")
+		plt.legend()
+
+		plt.tight_layout()
+		print(best_param)
+		plt.show(block=True)
