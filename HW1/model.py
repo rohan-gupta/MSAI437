@@ -387,5 +387,5 @@ if __name__ == "__main__":
 		plt.legend()
 
 		plt.tight_layout()
-		print(best_param)
+		print(f, best_param)
 		plt.show(block=True)
