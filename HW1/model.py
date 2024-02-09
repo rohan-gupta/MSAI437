@@ -16,7 +16,7 @@ class ActivationFunction:
 
 class NeuralNet:
 
-	def train(self, X_train, Y_train, X_val, Y_val, K, iterations, alpha):
+	def train(self, X_train, Y_train, X_val, Y_val, K, iterations, alpha, cost_function="binary_cross_entropy"):
 		"""
 			Inputs ->
 				1) X_train: x training data
@@ -42,7 +42,7 @@ class NeuralNet:
 			print("Epoch: ", _)
 			# Training
 			forward_pass_train = self.forward_prop(X_train, params)
-			train_loss = Utils.compute_cost(forward_pass_train["a2"], Y_train)
+			train_loss = Utils.compute_cost(forward_pass_train["a2"], Y_train, cost_function)
 			train_acc = Utils.compute_accuracy(forward_pass_train["a2"], Y_train)  # Compute training accuracy
 			train_acc_vals.append(train_acc)
 			train_loss_vals.append(train_loss)
@@ -51,7 +51,7 @@ class NeuralNet:
 			# print(Y_train)
 			# Validation
 			forward_pass_val = self.forward_prop(X_val, params)
-			val_loss = Utils.compute_cost(forward_pass_val["a2"], Y_val)
+			val_loss = Utils.compute_cost(forward_pass_val["a2"], Y_val, cost_function)
 			val_acc = Utils.compute_accuracy(forward_pass_val["a2"], Y_val)
 			val_loss_vals.append(val_loss)
 			val_acc_vals.append(val_acc)
@@ -209,12 +209,10 @@ class Utils:
 			m = Y.shape[0]
 			epsilon = 1e-15
 			preds = np.clip(preds, epsilon, 1 - epsilon)
-
 			cost = (-1 / m) * np.sum(Y * np.log(preds) + (1 - Y) * np.log(1 - preds))
 
-		else:
-			cost = 0
-			pass
+		elif cost_type == "mean_squared_error":
+			cost = np.mean((Y - preds) ** 2)
 
 		return cost
 
@@ -244,7 +242,7 @@ class Utils:
 
 	@staticmethod
 	def experiment_with_parameters(x_train, y_train, x_val, y_val, hidden_layer_sizes, learning_rates,
-								   iteration_counts):
+								   iteration_counts, cost_function):
 		"""
 		Experiment with various hyperparameters to find the best configuration.
 		"""
@@ -263,7 +261,8 @@ class Utils:
 						y_val,
 						K=K,
 						iterations=iterations,
-						alpha=alpha
+						alpha=alpha,
+						cost_function=cost_function
 					)
 
 					# Evaluate the model on the validation set
@@ -311,9 +310,9 @@ class Utils:
 if __name__ == "__main__":
 	# reading data
 	data = Utils.load_data(
-		"./data/xor_train.csv",
-		"./data/xor_test.csv",
-		"./data/xor_valid.csv"
+		"./data/spiral_train.csv",
+		"./data/spiral_test.csv",
+		"./data/spiral_valid.csv"
 	)
 
 	# getting appropriate splits
@@ -326,6 +325,7 @@ if __name__ == "__main__":
 	hidden_layer_sizes = [4, 8, 16, 32, 64]
 	learning_rates = [0.1, 0.01, 0.001, 0.0001]
 	iteration_counts = [100, 500, 1000]
+	cost_function = "mean_squared_error"
 	best_param = Utils.experiment_with_parameters(
 		x_train,
 		y_train,
@@ -333,7 +333,8 @@ if __name__ == "__main__":
 		y_val,
 		hidden_layer_sizes,
 		learning_rates,
-		iteration_counts
+		iteration_counts,
+		cost_function
 	)[0]
 
 	# Run model on best param
@@ -345,7 +346,8 @@ if __name__ == "__main__":
 		y_val,
 		K=best_param["hidden_layer_size"],
 		iterations=best_param["iterations"],
-		alpha=best_param["learning_rate"]
+		alpha=best_param["learning_rate"],
+		cost_function=cost_function,
 	)
 	x_test = data["x_test"]
 	y_test = data["y_test"]
