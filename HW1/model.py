@@ -354,6 +354,16 @@ if __name__ == "__main__":
 		)
 		x_test = data["x_test"]
 		y_test = data["y_test"]
+
+		# Get test accuracy
+		forward_pass_test = model.forward_prop(x_test, parameters)
+		test_acc = Utils.compute_accuracy(forward_pass_test["a2"], np.asarray(y_test).reshape((200, 1)))
+
+		# update best results
+		best_param["final_val_loss"] = val_loss_vals[-1]
+		best_param["final_val_acc"] = val_acc_vals[-1]
+		best_param["test_acc"] = test_acc
+
 		Utils.plot_decision_boundary(x_test, y_test, model, parameters)
 		plt.show()
 
