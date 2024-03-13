@@ -1,6 +1,0 @@
-torch 
-torchvision
-transformers==4.25.1
-diffusers
-ftfy
-gradio
